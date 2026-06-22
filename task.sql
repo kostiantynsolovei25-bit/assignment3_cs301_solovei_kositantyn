@@ -1,17 +1,19 @@
 SELECT * FROM assignment3.orders;
 SELECT * FROM assignment3.order_items;
+SELECT * FROM assignment3.order_log;
 SELECT * FROM assignment3.products;
 
 
-CREATE OR REPLACE FUNCTION calculate_order_total (p_order_id INT)
+CREATE OR REPLACE FUNCTION calculate_order_total(p_order_id INT)
 RETURNS DECIMAL
 LANGUAGE plpgsql
 AS $$
+DECLARE
+	v_total DECIMAL;
 BEGIN
     RETURN (
-		SELECT SUM(quantity * price) FROM assignment3.order_items
+		SELECT COALESCE(SUM(quantity * price), 0) FROM assignment3.order_items
 		WHERE order_id = p_order_id
-		GROUP BY order_id
 	);
 END;
 $$;
@@ -66,6 +68,70 @@ BEGIN
 	WHERE product_id = p_product_id;
 END;
 $$;
+
+
+CREATE OR REPLACE FUNCTION update_order_total()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_order_id INT;
+BEGIN
+    v_order_id := COALESCE(NEW.order_id, OLD.order_id);
+
+    UPDATE assignment3.orders
+    SET total_amount = assignment3.calculate_order_total(v_order_id)
+    WHERE order_id = v_order_id;
+
+    RETURN NULL;
+END;
+$$;
+
+
+CREATE OR REPLACE FUNCTION update_order_total()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_order_id INT;
+BEGIN
+    v_order_id := COALESCE(NEW.order_id, OLD.order_id);
+
+    UPDATE assignment3.orders
+    SET total_amount = assignment3.calculate_order_total(v_order_id)
+    WHERE order_id = v_order_id;
+
+    RETURN NULL;
+END;
+$$;
+
+
+CREATE OR REPLACE TRIGGER trigger_update_total_amount
+AFTER INSERT OR UPDATE OR DELETE
+ON assignment3.order_items
+FOR EACH ROW
+EXECUTE FUNCTION update_order_total();
+
+
+CREATE OR REPLACE FUNCTION create_order_log()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+BEGIN
+    INSERT INTO assignment3.order_log (order_id, customer_id, action_type, log_timestamp)
+    VALUES (NEW.order_id, NEW.customer_id, 'ordered', NOW());
+	RETURN NULL;
+END;
+$$;
+
+
+CREATE OR REPLACE TRIGGER add_order_to_log
+AFTER INSERT
+ON assignment3.orders
+FOR EACH ROW
+EXECUTE FUNCTION create_order_log();
+
 
 
 SELECT calculate_order_total(1);
