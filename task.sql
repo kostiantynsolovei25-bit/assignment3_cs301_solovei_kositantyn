@@ -119,7 +119,7 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
 BEGIN
-    INSERT INTO assignment3.order_log (order_id, customer_id, action_type, log_timestamp)
+    INSERT INTO assignment3.order_log (order_id, customer_id, action, log_date)
     VALUES (NEW.order_id, NEW.customer_id, 'ordered', NOW());
 	RETURN NULL;
 END;
