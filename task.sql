@@ -78,25 +78,7 @@ DECLARE
     v_order_id INT;
 BEGIN
     v_order_id := COALESCE(NEW.order_id, OLD.order_id);
-
-    UPDATE assignment3.orders
-    SET total_amount = assignment3.calculate_order_total(v_order_id)
-    WHERE order_id = v_order_id;
-
-    RETURN NULL;
-END;
-$$;
-
-
-CREATE OR REPLACE FUNCTION update_order_total()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-AS $$
-DECLARE
-    v_order_id INT;
-BEGIN
-    v_order_id := COALESCE(NEW.order_id, OLD.order_id);
-
+	
     UPDATE assignment3.orders
     SET total_amount = assignment3.calculate_order_total(v_order_id)
     WHERE order_id = v_order_id;
